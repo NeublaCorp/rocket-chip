@@ -316,14 +316,14 @@ abstract class BaseTile private (val crossing: ClockCrossingType, q: Parameters)
     BundleBridgeNameNode("bpwatch") :*= bpwatchNexusNode := bpwatchSourceNode
 
   /** Helper function for connecting MMIO devices inside the tile to an xbar that will make them visible to external masters. */
-  def connectTLSlave(xbarNode: TLOutwardNode, node: TLNode, bytes: Int): Unit = {
+  def connectTLSlave(xbarNode: TLOutwardNode, node: TLNode, bytes: Int, earlyAck: EarlyAck.T, holdFirstDeny: Boolean): Unit = {
     DisableMonitors { implicit p =>
-      (Seq(node, TLFragmenter(bytes, cacheBlockBytes, earlyAck=EarlyAck.PutFulls))
+      (Seq(node, TLFragmenter(bytes, cacheBlockBytes, earlyAck=earlyAck, holdFirstDeny = holdFirstDeny))
         ++ (xBytes != bytes).option(TLWidthWidget(xBytes)))
         .foldRight(xbarNode)(_ :*= _)
     }
   }
-  def connectTLSlave(node: TLNode, bytes: Int): Unit = { connectTLSlave(tlSlaveXbar.node, node, bytes) }
+  def connectTLSlave(node: TLNode, bytes: Int, earlyAck: EarlyAck.T = EarlyAck.PutFulls, holdFirstDeny: Boolean = false): Unit = { connectTLSlave(tlSlaveXbar.node, node, bytes, earlyAck = earlyAck, holdFirstDeny = holdFirstDeny) }
 
   /** TileLink node which represents the view that the intra-tile masters have of the rest of the system. */
   val visibilityNode = p(TileVisibilityNodeKey)
